@@ -1,0 +1,10 @@
+.reference/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+.env
+.env.*
+module.sig

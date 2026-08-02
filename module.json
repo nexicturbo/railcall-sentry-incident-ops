@@ -1,0 +1,437 @@
+{
+  "manifest_version": 2,
+  "id": "nexicturbo/sentry-incident-ops",
+  "name": "Sentry Incident Operations Airlock",
+  "version": "0.1.2",
+  "provider": "sentry",
+  "description": "Operate Sentry issue response without giving an agent an unattended production write path. Six bounded, privacy-minimized reads expose the incident context responders need; four mutations require RailCall approval, fetch live state immediately before execution, refuse stale approvals, verify the result after writing, and emit a deterministic SHA-256 safety proof. The token comes only from RailCall's vault. Network access is fixed to sentry.io, subprocesses and filesystem writes are disabled, responses omit structured user/email fields and raw event payloads, and Sentry failures are surfaced honestly. contest:2026Q3",
+  "auth": {
+    "type": "api_key",
+    "vault_provider": "sentry",
+    "field": "SENTRY_AUTH_TOKEN"
+  },
+  "credential_spec": {
+    "provider": "sentry",
+    "category": "observability",
+    "name": "Sentry",
+    "required": [
+      "SENTRY_AUTH_TOKEN"
+    ],
+    "optional": [],
+    "shape": "dict",
+    "risk": "high",
+    "read_write": "write"
+  },
+  "requires": {
+    "network": [
+      "sentry.io"
+    ],
+    "subprocess": false,
+    "filesystem_writes": []
+  },
+  "commands": [
+    {
+      "id": "sentry.list_projects",
+      "title": "List Sentry projects",
+      "provider": "sentry",
+      "risk": "low",
+      "mode": "read",
+      "side_effects": "none",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "query": {
+          "type": "string",
+          "required": false
+        },
+        "cursor": {
+          "type": "string",
+          "required": false
+        },
+        "per_page": {
+          "type": "number",
+          "required": false
+        }
+      },
+      "output_schema": {
+        "projects": "array",
+        "next_cursor": "string",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.list_owners",
+      "title": "List assignable Sentry teams and members",
+      "provider": "sentry",
+      "risk": "low",
+      "mode": "read",
+      "side_effects": "none",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "query": {
+          "type": "string",
+          "required": false
+        },
+        "teams_cursor": {
+          "type": "string",
+          "required": false
+        },
+        "members_cursor": {
+          "type": "string",
+          "required": false
+        },
+        "per_page": {
+          "type": "number",
+          "required": false
+        }
+      },
+      "output_schema": {
+        "owners": "array",
+        "next_teams_cursor": "string",
+        "next_members_cursor": "string",
+        "truncated": "boolean",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.list_issues",
+      "title": "Search Sentry issues",
+      "provider": "sentry",
+      "risk": "low",
+      "mode": "read",
+      "side_effects": "none",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "query": {
+          "type": "string",
+          "required": false
+        },
+        "project": {
+          "type": "string",
+          "required": false
+        },
+        "environment": {
+          "type": "string",
+          "required": false
+        },
+        "stats_period": {
+          "type": "string",
+          "required": false
+        },
+        "sort": {
+          "type": "string",
+          "required": false
+        },
+        "cursor": {
+          "type": "string",
+          "required": false
+        },
+        "limit": {
+          "type": "number",
+          "required": false
+        }
+      },
+      "output_schema": {
+        "issues": "array",
+        "next_cursor": "string",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.get_issue",
+      "title": "Get a Sentry issue",
+      "provider": "sentry",
+      "risk": "low",
+      "mode": "read",
+      "side_effects": "none",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "output_schema": {
+        "issue": "object",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.list_issue_events",
+      "title": "List privacy-minimized events for a Sentry issue",
+      "provider": "sentry",
+      "risk": "low",
+      "mode": "read",
+      "side_effects": "none",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        },
+        "environment": {
+          "type": "string",
+          "required": false
+        },
+        "stats_period": {
+          "type": "string",
+          "required": false
+        },
+        "cursor": {
+          "type": "string",
+          "required": false
+        },
+        "per_page": {
+          "type": "number",
+          "required": false
+        }
+      },
+      "output_schema": {
+        "events": "array",
+        "next_cursor": "string",
+        "privacy": "object",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.list_issue_tag_values",
+      "title": "List safe operational tag values for a Sentry issue",
+      "provider": "sentry",
+      "risk": "low",
+      "mode": "read",
+      "side_effects": "none",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        },
+        "tag_key": {
+          "type": "string",
+          "required": true
+        },
+        "environment": {
+          "type": "string",
+          "required": false
+        },
+        "sort": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "output_schema": {
+        "tag_key": "string",
+        "values": "array",
+        "privacy": "object",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.set_issue_status",
+      "title": "Set issue status with a live precondition",
+      "provider": "sentry",
+      "risk": "high",
+      "mode": "write_requires_approval",
+      "side_effects": "external",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        },
+        "expected_status": {
+          "type": "string",
+          "required": true
+        },
+        "status": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "output_schema": {
+        "issue_id": "string",
+        "before": "object",
+        "after": "object",
+        "changed": "boolean",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.assign_issue",
+      "title": "Assign or unassign an issue with a live precondition",
+      "provider": "sentry",
+      "risk": "high",
+      "mode": "write_requires_approval",
+      "side_effects": "external",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        },
+        "expected_assignee": {
+          "type": "string",
+          "required": true
+        },
+        "assigned_to": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "output_schema": {
+        "issue_id": "string",
+        "before": "object",
+        "after": "object",
+        "changed": "boolean",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.set_issue_priority",
+      "title": "Set issue priority with a live precondition",
+      "provider": "sentry",
+      "risk": "high",
+      "mode": "write_requires_approval",
+      "side_effects": "external",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        },
+        "expected_priority": {
+          "type": "string",
+          "required": true
+        },
+        "priority": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "output_schema": {
+        "issue_id": "string",
+        "before": "object",
+        "after": "object",
+        "changed": "boolean",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    },
+    {
+      "id": "sentry.mark_issue_reviewed",
+      "title": "Mark an issue reviewed in Sentry",
+      "provider": "sentry",
+      "risk": "medium",
+      "mode": "write_requires_approval",
+      "side_effects": "external",
+      "requires": [
+        "SENTRY_AUTH_TOKEN"
+      ],
+      "preview": true,
+      "receipt_required": true,
+      "input_schema": {
+        "organization_slug": {
+          "type": "string",
+          "required": true
+        },
+        "issue_id": {
+          "type": "string",
+          "required": true
+        },
+        "expected_inbox": {
+          "type": "boolean",
+          "required": true
+        }
+      },
+      "output_schema": {
+        "issue_id": "string",
+        "before": "object",
+        "after": "object",
+        "changed": "boolean",
+        "http_status": "number",
+        "safety_proof": "object"
+      }
+    }
+  ],
+  "license_required": false,
+  "publisher_pubkey": "4e92f188a4a3a6af1c517a712a6f81a9a2b4f2b4b7bf7978d7030d787e8af618"
+}
